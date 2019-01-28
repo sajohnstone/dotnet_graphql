@@ -9,18 +9,6 @@ namespace App
 {
     public class Program
     {
-        public static ISchema MySchema
-        {
-            get
-            {
-                return Schema.For(@"
-                    type Query {
-                        hello: String
-                    }
-                ");
-            }
-        }
-
         static void Main(string[] args)
         {
             //setup our DI
@@ -38,10 +26,11 @@ namespace App
                 .AddSingleton<ISchema, StarWarsSchema>()
                 .AddSingleton<StarWarsSchema>();
 
+            //setup the schema
             ServiceProvider provider = services.BuildServiceProvider();
             StarWarsSchema swss = provider.GetRequiredService<StarWarsSchema>();
 
-
+            //do the GUI stuff
             Console.WriteLine("Welcome to the Star Wars GraphQL Implementation");
             Console.WriteLine("Press CTRL C or type EXIT to exit");
             var q = "";
