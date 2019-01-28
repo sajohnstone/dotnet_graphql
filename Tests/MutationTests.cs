@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Xunit;
 using App;
 using GraphQL;
@@ -8,16 +8,18 @@ using StarWars;
 using GraphQL.Types;
 using StarWars.Types;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Tests
 {
-    public class SchemaTests
+    public class MutationTests
     {
         private ITestOutputHelper _output;
         private ServiceProvider _provider = null;
         private IServiceCollection _services = null;
 
-        public SchemaTests(ITestOutputHelper output)
+        public MutationTests(ITestOutputHelper output)
         {
             this._output = output;
 
@@ -39,36 +41,26 @@ namespace Tests
             this._provider = _services.BuildServiceProvider();
         }
 
-        [Theory]
-        [InlineData(@"{ human(id: ""2"") { fullname id} }", @"{""data"":{""human"":{""fullname"": ""Vader"",""id"": ""2""}}}")]
-        [InlineData(@"{ human(id: ""1"") { fullname id} }", @"{""data"":{""human"":{""fullname"": ""Luke"",""id"": ""1""}}}")]
-        public void ValidSchema(string query, string expected)
+        [Fact]
+        public void TestMutation()
         {
-            //                
-            StarWarsSchema swss = this._provider.GetRequiredService<StarWarsSchema>();
-            var result = swss.Execute(x =>
-            {
-                x.Query = query;
-            });
+            string query = @"{ ""query"": ""mutation ($human:HumanInput!){ createHuman(human: $human) { id fullname } }"", ""variables"": { ""human"": { ""fullname"": ""Bobba Fett"",""id"": ""3"" } } }";
+            string expected = @"{ ""data"": { ""createHuman"": { ""id"": ""3"",""fullname"": ""Bobba Fett"" } } }";
 
-            _output.WriteLine("Query:" + query);
-            _output.WriteLine("Result:" + result);
-            JToken actualJson = JToken.Parse(result);
-            JToken expectedJson = JToken.Parse(expected);
-            Assert.Equal(expectedJson.ToString(), actualJson.ToString());
-        }
-
-        [Theory]
-        [InlineData(@"{ human(id: ""2"") { fullname id} }",
-            @"{""data"":{""human"":{""fullname"": ""Vader"",""id"": ""2""}}}")]
-        public void ValidSchemaVariables(string query, string expected)
-        {
-            //                
             StarWarsSchema swss = this._provider.GetRequiredService<StarWarsSchema>();
-            var result = swss.Execute(x =>
+            var result = swss.Execute(_ =>
             {
-                
-                x.Query = query;
+                //get the input into GraphQL format
+                GraphQL.Inputs queryInputs = query.ToInputs();
+                foreach (KeyValuePair<string, object> qIn in queryInputs)
+                {
+                    if (qIn.Key == "variables")
+                    {
+                        string json = JsonConvert.SerializeObject(qIn.Value, Formatting.Indented);
+                        _.Inputs = json.ToInputs();
+                    }
+                    if (qIn.Key == "query") _.Query = qIn.Value.ToString();
+                }
             });
 
             _output.WriteLine("Query:" + query);
