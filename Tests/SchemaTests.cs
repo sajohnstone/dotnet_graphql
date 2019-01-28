@@ -17,7 +17,7 @@ namespace Tests
         public SchemaTests()
         {
             //setup our DI
-            IServiceCollection _Services = new ServiceCollection()
+            this.Services = new ServiceCollection()
                 .AddSingleton<IDependencyResolver>(s => new FuncDependencyResolver(s.GetRequiredService))
                 .AddSingleton<IDocumentExecuter, DocumentExecuter>()
                 .AddSingleton<StarWarsData>()
@@ -31,7 +31,7 @@ namespace Tests
                 .AddSingleton<ISchema, StarWarsSchema>()
                 .AddSingleton<StarWarsSchema>();
 
-            this.Provider = _Services.BuildServiceProvider();
+            this.Provider = Services.BuildServiceProvider();
         }
 
         [Theory]
