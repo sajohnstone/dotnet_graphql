@@ -23,12 +23,10 @@ namespace App
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Welcome to the Star Wars GraphQL Implementation");
-            Console.WriteLine("Please enter a valid quiery:");
-            Console.ReadLine();
-
             //setup our DI
-            var services = new ServiceCollection()
+            IServiceCollection services = new ServiceCollection()
+                .AddSingleton<IDependencyResolver>(s => new FuncDependencyResolver(s.GetRequiredService))
+                .AddSingleton<IDocumentExecuter, DocumentExecuter>()
                 .AddSingleton<StarWarsData>()
                 .AddSingleton<StarWarsQuery>()
                 .AddSingleton<StarWarsMutation>()
@@ -37,19 +35,26 @@ namespace App
                 .AddSingleton<DroidType>()
                 .AddSingleton<CharacterInterface>()
                 .AddSingleton<EpisodeEnum>()
-                .AddSingleton<ISchema, StarWarsSchema>();
+                .AddSingleton<ISchema, StarWarsSchema>()
+                .AddSingleton<StarWarsSchema>();
 
-            var provider = services.BuildServiceProvider();
-            var swss = provider.GetService<StarWarsSchema>();
+            ServiceProvider provider = services.BuildServiceProvider();
+            StarWarsSchema swss = provider.GetRequiredService<StarWarsSchema>();
 
-            var q = @"{ human(id: ""1000"") { name height} }";
 
-            var result = swss.Execute(x =>
+            Console.WriteLine("Welcome to the Star Wars GraphQL Implementation");
+            Console.WriteLine("Press CTRL C or type EXIT to exit");
+            var q = "";
+            while (q.ToUpper() != "EXIT")
             {
-                x.Query = q;
-            });
-
-            Console.WriteLine($"Result = {result}");
+                Console.WriteLine("Please enter a valid query:");
+                q = Console.ReadLine();
+                var result = swss.Execute(x =>
+                {
+                    x.Query = q;
+                });
+                Console.WriteLine($"Result = {result}");
+            }
         }
     }
 }
